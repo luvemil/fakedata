@@ -20,12 +20,14 @@ module Faker
   , setCacheFile
   , replaceCacheField
   , replaceCacheFile
+  , setLocaleDir
     -- * Getters
   , getRandomGen
   , getLocale
   , getDeterministic
   , getCacheField
   , getCacheFile
+  , getLocaleDir
     -- * Generators
   , generate
   , generateNonDeterministic
@@ -54,6 +56,7 @@ data FakerSettings = FakerSettings
                             -- 'fsrandomGen'.
   , fsCacheField :: (IORef (HM.HashMap CacheFieldKey (Vector Text)))
   , fsCacheFile :: (IORef (HM.HashMap CacheFileKey Value))
+  , fsLocaleDir :: !(Maybe Text) -- ^ Alternative directory for your locales 
   }
 
 newtype FakerGen = FakerGen
@@ -91,6 +94,7 @@ defaultFakerSettings =
     , fsDeterministic = True
     , fsCacheField = error "defaultFakerSettings: fsCacheField not initialized"
     , fsCacheFile = error "defaultFakerSettings: fsCacheFile not initialized"
+    , fsLocaleDir = Nothing
     }
 
 -- | Sets the locale. Note that for any other locale apart from
@@ -171,6 +175,12 @@ replaceCacheFile ::
 replaceCacheFile cache fs = do
   ref <- newIORef cache
   pure $ fs {fsCacheFile = ref}
+
+setLocaleDir :: Text -> FakerSettings -> FakerSettings
+setLocaleDir ld fs = fs { fsLocaleDir = Just ld }
+
+getLocaleDir :: FakerSettings -> Maybe Text
+getLocaleDir FakerSettings {..} = fsLocaleDir
 
 -- | Fake data type. This is the type you will be using to produce
 -- fake values.

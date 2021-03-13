@@ -408,6 +408,14 @@ getSourceFile fname = do
     then pure fname'
     else throwM $ InvalidLocale fname'
 
+getSourceFileCustom :: (MonadThrow m, MonadIO m) => FilePath -> FilePath -> m FilePath
+getSourceFileCustom prefix fname = do
+  let fname' = prefix </> fname
+  exist <- liftIO $ doesFileExist fname'
+  if exist
+    then pure fname'
+    else throwM $ InvalidLocale fname'
+
 fetchData ::
      (MonadThrow m, MonadIO m)
   => FakerSettings
@@ -418,10 +426,13 @@ fetchData settings sdata parser = do
   let locale = getLocale settings
       fname = guessSourceFile sdata locale
       ckey = CacheFileKey {cfkSource = sdata, cfkLocale = locale}
+      localeDir = getLocaleDir settings
   cache <- liftIO $ getCacheFile settings
   case (HM.lookup ckey cache) of
     Nothing -> do
-      afile <- getSourceFile fname
+      afile <- case localeDir of 
+        Just prefix -> getSourceFileCustom (unpack prefix) fname
+        Nothing     -> getSourceFile fname
       bs <- liftIO $ BS.readFile afile
       yaml <- decodeThrow bs
       let nhash = HM.insert ckey yaml cache
